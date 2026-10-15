@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오픈 API 라이브 대시보드 갤러리</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+:root{
+  --bg:#fffdf7; --panel:#ffffff; --ink:#3a2e1a; --muted:#9a8b6a; --line:#f0e2bc;
+  --pico1:#f4b400; --pico2:#e8930c;
+  --font:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+  --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.65;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:840px;margin:0 auto;padding:18px 16px 80px;}
+.back{display:inline-block;color:var(--muted);font-size:13px;font-weight:600;margin:6px 0 14px;}
+.back:hover{color:var(--pico1);}
+a{text-decoration:none;color:inherit;}
+.phead{text-align:center;margin:8px 0 22px;}
+.bigemoji{font-size:46px;line-height:1;}
+.phead h1{font-size:clamp(22px,5vw,30px);font-weight:800;letter-spacing:-.02em;margin:8px 0 10px;}
+.tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.tag{font-size:12px;font-weight:700;border-radius:999px;padding:4px 12px;}
+.tag.subj{background:#fff6e0;color:#a06a08;}
+.tag.region{background:#fff0f6;color:#b83d72;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin:14px 0;
+  box-shadow:0 4px 18px rgba(180,140,20,.08);}
+.card h2{font-size:15px;font-weight:800;margin-bottom:12px;letter-spacing:-.01em;}
+.card h2 .hint{font-weight:500;font-size:12px;color:var(--muted);}
+.lead{font-size:14.5px;line-height:1.8;color:#6b5836;background:linear-gradient(180deg,#fffaf0,#fff);
+  border-left:4px solid #5B6CF0;border-radius:0 12px 12px 0;padding:13px 16px;margin-bottom:14px;}
+.lead b{color:#a06a08;}
+.info table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.info td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top;}
+.info td.k{width:108px;color:var(--muted);font-weight:600;}
+.info code,.live code{font-family:var(--mono);font-size:12px;background:#fbf3dd;border:1px solid var(--line);
+  border-radius:5px;padding:1px 6px;word-break:break-all;}
+.srclink{display:inline-block;margin-top:14px;font-size:13px;font-weight:700;color:#a06a08;
+  background:#fff6e0;border:1px solid #f0e2bc;border-radius:10px;padding:8px 14px;}
+.srclink:hover{background:#fdeecd;}
+.refs{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.refs-t{font-size:12px;font-weight:700;color:var(--muted);}
+.refchip{font-size:12.5px;font-weight:600;color:#b83d72;background:#fff0f6;border:1px solid #f6d3e3;
+  border-radius:999px;padding:6px 12px;}
+.refchip:hover{background:#ffe3ef;}
+/* 소행성 애니메이션 시각화 */
+.astro{width:100%;height:auto;background:radial-gradient(120% 140% at 12% 50%,#0b1224,#070a16);
+  border:1px solid #1d2540;border-radius:16px;margin:6px 0 6px;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes twinkle{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+.ast{animation:bob 4s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+.ast .rock{transform-box:fill-box;transform-origin:center;}
+.ast-pop{animation:pop .5s ease-out both;transform-box:fill-box;transform-origin:center;}
+.earthpulse{animation:twinkle 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+.apply ul{margin:0;padding-left:18px;}
+.apply li{font-size:14px;margin:7px 0;}
+.vibe .vibeintro{font-size:13.5px;color:#6b5836;margin-bottom:12px;}
+.core .coreintro{font-size:13.5px;color:#6b5836;margin-bottom:12px;}
+.core .coreintro code,.core .corenote code{font-family:var(--mono);font-size:12.5px;background:#fff6e0;color:#a06a08;
+  padding:1px 6px;border-radius:6px;}
+.core .corenote{font-size:12.5px;color:#6b5e2e;background:#fdf8ec;border:1px solid #f0e4c4;
+  border-radius:10px;padding:9px 12px;margin-bottom:12px;}
+.core .corenote code{background:#f3ead0;color:#7a6a2e;}
+.corefold{border:1px dashed #e8d9a8;border-radius:12px;background:#fffaf0;}
+.corefold summary{cursor:pointer;font-size:12.5px;font-weight:700;color:#a06a08;padding:11px 13px;list-style:none;}
+.corefold summary::-webkit-details-marker{display:none;}
+.corefold summary:before{content:'▸ ';}
+.corefold[open] summary:before{content:'▾ ';}
+.corefold[open] summary{border-bottom:1px solid var(--line);}
+.corefold .vibebox{margin:10px;}
+.vibecommon{margin:0 0 14px;border:1px dashed #e8d9a8;border-radius:12px;background:#fffaf0;}
+.vibecommon summary{cursor:pointer;font-size:12.5px;font-weight:700;color:#a06a08;padding:10px 13px;list-style:none;}
+.vibecommon summary::-webkit-details-marker{display:none;}
+.vibecommon summary:before{content:'▸ ';}
+.vibecommon[open] summary:before{content:'▾ ';}
+.vibecommon[open] summary{border-bottom:1px solid var(--line);}
+.vibecommon .vibebox{margin:10px;}
+.vibebox{border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden;background:#fffdf7;}
+.vibehead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;
+  background:#fbf3dd;border-bottom:1px solid var(--line);}
+.vibelabel{font-size:12.5px;font-weight:700;color:#a06a08;}
+.vibecopy{font-family:var(--font);font-size:12px;font-weight:700;color:#fff;cursor:pointer;border:none;
+  border-radius:8px;padding:5px 12px;background:linear-gradient(120deg,var(--pico1),var(--pico2));white-space:nowrap;}
+.vibecopy:hover{filter:brightness(1.05);}
+.vibecopy.done{background:#54a24b;}
+.vibetext{font-family:var(--mono);font-size:12px;line-height:1.6;color:#3a2e1a;white-space:pre-wrap;
+  word-break:break-word;padding:12px 14px;margin:0;}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.controls input,.controls select{font-family:var(--font);font-size:14px;border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;background:#fff;min-width:0;}
+.controls input{width:120px;}
+.controls button{font-family:var(--font);font-size:14px;font-weight:700;color:#fff;cursor:pointer;border:none;
+  border-radius:10px;padding:9px 18px;background:linear-gradient(120deg,var(--pico1),var(--pico2));}
+.controls button:hover{filter:brightness(1.05);}
+.controls label{font-size:12.5px;color:var(--muted);font-weight:600;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.stat{background:#fffaf0;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;}
+.stat .lab{font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.stat .val{font-size:30px;font-weight:800;margin-top:6px;line-height:1.1;}
+.stat .unit{font-size:11px;color:var(--muted);margin-top:3px;}
+.status{font-size:13px;color:var(--muted);padding:8px 0;}
+.status.err{color:#e45756;}
+.chartbox{margin-top:14px;}
+.map{height:360px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:6px;}
+.leaflet-popup-content{font-family:var(--font);font-size:13px;}
+.qbox{background:linear-gradient(180deg,#fff8fb,#fff);border:1px solid #f6d3e3;border-radius:12px;
+  padding:12px 16px;margin-top:14px;}
+.qbox-t{font-weight:800;font-size:13px;color:#b83d72;margin-bottom:6px;}
+.qbox ul{margin:0;padding-left:18px;}
+.qbox li{font-size:13.5px;margin:5px 0;}
+.list{list-style:none;padding:0;margin:8px 0 0;}
+.list li{display:flex;gap:12px;align-items:baseline;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13.5px;}
+.badge{flex:0 0 auto;font-weight:800;font-size:13px;border-radius:8px;padding:3px 9px;color:#fff;}
+.list .meta{color:var(--muted);font-size:12px;}
+.bigimg{width:100%;border-radius:14px;border:1px solid var(--line);margin-top:8px;display:block;}
+.molwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+.molwrap img{width:180px;height:180px;background:#fff;border:1px solid var(--line);border-radius:14px;}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:14px;}
+.seg button{font-family:var(--font);font-size:13px;font-weight:700;border:none;background:#fff;color:var(--muted);padding:9px 18px;cursor:pointer;}
+.seg button.seg-on{background:linear-gradient(120deg,var(--pico1),var(--pico2));color:#fff;}
+.molimg{width:220px;height:220px;display:block;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:16px;}
+.mol3d{height:340px;position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#fbf3dd;}
+footer{margin-top:30px;text-align:center;color:var(--muted);font-size:12px;}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.gcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;transition:.15s;
+  box-shadow:0 4px 18px rgba(180,140,20,.08);}
+.gcard:hover{transform:translateY(-2px);border-color:#e8d9a8;}
+.gcard .ge{font-size:30px;}
+.gcard .ge{display:flex;align-items:center;justify-content:space-between;}
+.gcard .gt{font-weight:800;font-size:15px;margin:8px 0 4px;}
+.gcard .gs{font-size:12.5px;color:var(--muted);}
+.gcard .ghook{font-size:12px;color:#a06a08;margin-top:10px;padding-top:9px;border-top:1px dashed #f0e2bc;line-height:1.5;}
+.gmap{font-size:10.5px;font-weight:700;color:#1f7a63;background:#e6f7f0;border:1px solid #c4ebdd;border-radius:999px;padding:2px 8px;}
+.steps3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:4px 0 18px;}
+.s3{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;
+  box-shadow:0 4px 18px rgba(180,140,20,.08);}
+.s3 .s3n{width:24px;height:24px;border-radius:50%;background:linear-gradient(120deg,var(--pico1),var(--pico2));
+  color:#fff;font-weight:800;font-size:13px;text-align:center;line-height:24px;margin-bottom:7px;}
+.s3 b{font-size:14px;}
+.s3 span{display:block;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.recgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+.reccard{display:block;background:#fffaf0;border:1px solid var(--line);border-radius:12px;padding:13px 15px;transition:.15s;}
+.reccard:hover{border-color:#e8d9a8;background:#fff6e0;}
+.reccard .re{font-size:22px;}
+.reccard .rt{font-weight:800;font-size:14px;margin:5px 0 2px;}
+.reccard .rf{font-size:11.5px;color:#a06a08;font-weight:600;}
+.reccard .rd{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5;}
+.pico-accent{background:linear-gradient(120deg,var(--pico1),var(--pico2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900;}
+
+[hidden]{display:none!important}
+</style>
+</head><body>
+<div class="wrap" id="home">
+  
+  <header class="phead">
+    <div class="bigemoji">🛰️🌤️⚗️</div>
+    <h1>오픈 API <span class="pico-accent">데이터 탐구실</span></h1>
+    <p style="color:#7a7f95;font-size:14px;max-width:600px;margin:6px auto 0">
+      세상의 <b>공개 데이터(Open API)</b>를 브라우저에서 직접 받아와 그려 보는 탐구실이에요.
+      카드를 눌러 각 데이터가 <b>어떤 데이터인지</b> 알아보세요.</p>
+  </header>
+
+  <div class="gallery"><a class="gcard" href="#weather"><div class="ge">🌤️</div><div class="gt">오늘의 날씨</div><div class="gs">지구과학·환경</div><div class="ghook">🔎 오늘 하루 기온은 어떻게 변할까? 일교차가 큰 날은 언제?</div></a><a class="gcard" href="#airquality"><div class="ge">🌫️</div><div class="gt">미세먼지</div><div class="gs">환경</div><div class="ghook">🔎 지금 우리 동네 공기는 안전할까? 언제 가장 나쁠까?</div></a><a class="gcard" href="#earthquake"><div class="ge">🌍<span class="gmap">🗺️ 지도</span></div><div class="gt">전 세계 지진</div><div class="gs">지구과학</div><div class="ghook">🔎 지진은 왜 특정 띠(불의 고리)에 몰릴까?</div></a><a class="gcard" href="#iss"><div class="ge">🛰️<span class="gmap">🗺️ 지도</span></div><div class="gt">ISS 위치</div><div class="gs">천문·물리</div><div class="ghook">🔎 우주정거장은 지금 어디를? 경로는 왜 물결칠까?</div></a><a class="gcard" href="#sunrise"><div class="ge">🌅</div><div class="gt">일출·일몰</div><div class="gs">천문·지구과학</div><div class="ghook">🔎 계절마다 낮 길이는 왜 달라질까? 극지방은?</div></a><a class="gcard" href="#pubchem"><div class="ge">⚗️</div><div class="gt">물질 정보</div><div class="gs">화학</div><div class="ghook">🔎 물·카페인·포도당… 분자량은 얼마나 다를까?</div></a><a class="gcard" href="#gbif"><div class="ge">🐦<span class="gmap">🗺️ 지도</span></div><div class="gt">생물 관찰</div><div class="gs">생물</div><div class="ghook">🔎 이 생물은 어디에 사나? 도시 vs 산?</div></a><a class="gcard" href="#nasa"><div class="ge">🔭</div><div class="gt">NASA 우주 데이터</div><div class="gs">천문</div><div class="ghook">🔎 오늘의 우주 사진은? 지구 곁 소행성은 몇 개?</div></a><a class="gcard" href="#energy"><div class="ge">⚡</div><div class="gt">태양·바람 에너지</div><div class="gs">에너지·물리·지구</div><div class="ghook">🔎 우리 지역은 태양광·풍력 중 뭐가 유리?</div></a><a class="gcard" href="#worldbank"><div class="ge">🌱</div><div class="gt">나라별 CO₂·에너지</div><div class="gs">환경·에너지·물리</div><div class="ghook">🔎 우리나라 1인당 CO₂는 다른 나라보다?</div></a></div>
+
+  <div class="card" style="margin-top:18px">
+    <h2 style="font-size:14px;font-weight:800;margin-bottom:8px">💡 API가 뭐예요? — 한 줄 요약</h2>
+    <p style="font-size:13.5px;color:#44464f;line-height:1.8">관공서에서 <b>등본</b>을 떼듯, ‘데이터를 가진 기관에 정해진 양식으로 신청(요청)하면 정해진 형식으로 발급(응답)해 주는 창구’가 <b>API</b>예요.
+    위 대시보드는 모두 <b>무료</b>로 브라우저에서 바로 호출해요(NASA만 키 필요, 페이지에 포함).</p>
+    <p style="font-size:12.5px;color:#7a7f95;line-height:1.7;margin-top:10px">🇰🇷 <b>국내 공식 데이터</b>가 필요하면 <a href="https://www.data.go.kr" target="_blank" rel="noopener" style="color:#3b47c2;font-weight:600">공공데이터포털 ↗</a>에서 무료 키를 받아 쓰세요 — 기상청(날씨·지진), 에어코리아(미세먼지), 전력거래소(전력수급) 등 국내 정확도가 높습니다.</p>
+  </div>
+
+  <footer>모두 공개 데이터 · 브라우저에서 바로 호출(CORS 허용 확인) · 데이터는 각 제공처의 것입니다.</footer>
+</div>
+<div class="wrap"><div class="view" id="v-weather" hidden><a class="back" href="#">← 오픈 API 데이터 탐구실</a><header class="phead">
+    <div class="bigemoji">🌤️</div>
+    <h1>오늘의 날씨</h1>
+    <div class="tags"><span class="tag subj">지구과학·환경</span><span class="tag region">🇰🇷 국내 OK · 🌍 전 세계</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">독일의 비영리 팀이 전 세계 여러 나라 기상청의 <b>슈퍼컴퓨터 예보</b>를 모아 무료로 공개해요. 위도·경도만 찍으면 <b>지구 어디든</b> 시간별 기온·강수확률·바람을 돌려줍니다. 회원가입도, API 키도 필요 없어요.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>전 세계 시간별 기온·강수확률·바람 등 (Open-Meteo)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료 · 교육용 자유 사용</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.open-meteo.com/v1/forecast?latitude=..&amp;longitude=..&amp;hourly=temperature_2m</code></td></tr>
+    <tr><td class="k">받는 형식</td><td>JSON · <code>hourly.time[]</code> 과 <code>hourly.temperature_2m[]</code> 가 짝</td></tr>
+  </table>
+    <a class="srclink" href="https://open-meteo.com" target="_blank" rel="noopener">🔗 원 데이터 출처: Open-Meteo ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://open-meteo.com/en/docs" target="_blank" rel="noopener">Open-Meteo 공식 문서</a></div>
+  </section></div><div class="view" id="v-airquality" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🌫️</div>
+    <h1>미세먼지 (대기질)</h1>
+    <div class="tags"><span class="tag subj">환경</span><span class="tag region">🌍 전 지구(국내 포함)</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">같은 Open-Meteo가 유럽 <b>CAMS 대기질 모델</b>로 전 지구의 미세먼지(PM2.5·PM10)·오존을 시간별로 알려줘요. 위·경도만 바꾸면 여러 지역의 공기질을 숫자로 비교해 볼 수 있습니다.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>PM2.5·PM10·오존 등 대기질 (Open-Meteo Air Quality)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>air-quality-api.open-meteo.com/v1/air-quality?...&amp;current=pm2_5,pm10</code></td></tr>
+    <tr><td class="k">참고</td><td>전 지구 모델 기반. <b>공식 국내값은 ‘에어코리아’</b> 권장</td></tr>
+  </table>
+    <a class="srclink" href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">🔗 원 데이터 출처: Open-Meteo Air Quality ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://www.airkorea.or.kr" target="_blank" rel="noopener">에어코리아(국내 공식)</a></div>
+  </section></div><div class="view" id="v-earthquake" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🌍</div>
+    <h1>전 세계 지진</h1>
+    <div class="tags"><span class="tag subj">지구과학</span><span class="tag region">🌎 해외 위주(국내 지진은 드묾)</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">미국 <b>지질조사국(USGS)</b>이 전 세계 지진계 네트워크로 잡은 지진을 <b>1분 단위</b>로 갱신해 공개합니다. 지금 이 순간 지구 어딘가에서 흔들린 땅을 실시간으로 만나 보세요.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>실시간 지진 목록(규모·위치·깊이·시각), GeoJSON (USGS)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson</code></td></tr>
+    <tr><td class="k">국내</td><td>한반도 지진은 드물게 잡힘 → <b>국내는 기상청 권장</b></td></tr>
+  </table>
+    <a class="srclink" href="https://earthquake.usgs.gov" target="_blank" rel="noopener">🔗 원 데이터 출처: USGS Earthquake Hazards Program ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://earthquake.usgs.gov/earthquakes/map/" target="_blank" rel="noopener">USGS 실시간 지진 지도</a><a class="refchip" href="https://www.weather.go.kr/w/eqk-vol/search/korea.do" target="_blank" rel="noopener">기상청 지진정보(국내)</a></div>
+  </section></div><div class="view" id="v-iss" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🛰️</div>
+    <h1>국제우주정거장 ISS</h1>
+    <div class="tags"><span class="tag subj">천문·물리</span><span class="tag region">🌍 전 지구(국내 상공 포함)</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">축구장만 한 <b>국제우주정거장(ISS)</b>이 지금 지구 위 약 <b>420km</b>에서 <b>시속 27,000km</b>로 날고 있어요. 약 90분에 지구를 한 바퀴! 그 위치를 초 단위로 알려주는 서비스입니다.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>ISS의 실시간 위·경도·고도·속도 (wheretheiss.at)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.wheretheiss.at/v1/satellites/25544</code></td></tr>
+    <tr><td class="k">갱신</td><td>이 페이지는 <b>5초마다 자동 갱신</b>됩니다</td></tr>
+  </table>
+    <a class="srclink" href="https://wheretheiss.at" target="_blank" rel="noopener">🔗 원 데이터 출처: Where the ISS at? ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://spotthestation.nasa.gov" target="_blank" rel="noopener">NASA Spot the Station</a><a class="refchip" href="https://www.nasa.gov/live/" target="_blank" rel="noopener">ISS 실시간 영상(NASA)</a></div>
+  </section></div><div class="view" id="v-sunrise" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🌅</div>
+    <h1>일출·일몰·낮 길이</h1>
+    <div class="tags"><span class="tag subj">천문·지구과학</span><span class="tag region">🇰🇷 국내 OK</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">전 세계 <b>어떤 좌표든</b> 오늘 해가 뜨고 지는 시각을 천문 계산으로 알려줘요. 위도를 북극 가까이 바꿔 보면 해가 안 지는 <b>백야</b>도 데이터로 확인할 수 있습니다.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>일출·일몰·남중·낮 길이·박명 시각 (sunrise-sunset.org)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.sunrise-sunset.org/json?lat=..&amp;lng=..&amp;formatted=0</code></td></tr>
+    <tr><td class="k">시각</td><td>UTC로 옵니다 → 이 페이지가 <b>한국 시간으로 변환</b>해 표시</td></tr>
+  </table>
+    <a class="srclink" href="https://sunrise-sunset.org" target="_blank" rel="noopener">🔗 원 데이터 출처: Sunrise-Sunset.org ↗</a>
+    
+  </section></div><div class="view" id="v-pubchem" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">⚗️</div>
+    <h1>물질 정보 (화학)</h1>
+    <div class="tags"><span class="tag subj">화학</span><span class="tag region">🌐 국적 무관</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">미국 국립보건원(NIH)이 운영하는 세계 최대 화학 백과 <b>PubChem</b>. <b>1억 종</b>이 넘는 물질의 이름만 넣으면 분자식·분자량은 물론 <b>구조 그림</b>까지 그려 줍니다.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>물질 이름으로 분자식·분자량·구조 그림 (PubChem)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/<i>caffeine</i>/property/MolecularWeight/JSON</code></td></tr>
+    <tr><td class="k">2D 그림</td><td>같은 주소의 <code>/PNG</code> 로 평면 구조 이미지를 받습니다</td></tr>
+    <tr><td class="k">3D 구조</td><td>PubChem이 <b>계산한 3D 입체구조 좌표(SDF, <code>record_type=3d</code>)</b>를 받아 <a href="https://3Dmol.org" target="_blank" rel="noopener" style="color:#3b47c2">3Dmol.js</a>로 회전 가능하게 그립니다 — 데이터는 <b>PubChem</b>이 제공</td></tr>
+  </table>
+    <a class="srclink" href="https://pubchem.ncbi.nlm.nih.gov" target="_blank" rel="noopener">🔗 원 데이터 출처: PubChem (미국 국립보건원 NIH) ↗</a>
+    
+  </section></div><div class="view" id="v-gbif" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🐦</div>
+    <h1>우리나라 생물 관찰</h1>
+    <div class="tags"><span class="tag subj">생물</span><span class="tag region">🇰🇷 국내 OK</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead">전 세계 박물관·연구자·시민과학자가 모은 생물 관찰 기록 <b>20억 건 이상</b>을 한곳에 모은 <b>GBIF</b>. ‘우리나라에서 까치가 언제·어디서 관찰됐나’ 같은 것도 찾을 수 있어요(한국 약 880만 건).</p>
+    <table>
+    <tr><td class="k">무엇</td><td>전 세계 생물 관찰 기록 DB(종·위치·날짜·사진) (GBIF)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.gbif.org/v1/occurrence/search?country=KR&amp;scientificName=Pica%20pica</code></td></tr>
+    <tr><td class="k">국내</td><td>한국 관찰기록 약 <b>880만 건</b> — 풍부</td></tr>
+  </table>
+    <a class="srclink" href="https://www.gbif.org/country/KR/summary" target="_blank" rel="noopener">🔗 원 데이터 출처: GBIF (세계생물다양성정보기구) ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://www.nibr.go.kr" target="_blank" rel="noopener">국립생물자원관</a></div>
+  </section></div><div class="view" id="v-nasa" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🔭</div>
+    <h1>NASA 우주 데이터</h1>
+    <div class="tags"><span class="tag subj">천문</span><span class="tag region">🌐 국적 무관 · 키 필요</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead"><b>NASA</b>의 공개 데이터 두 가지를 함께 봅니다. 1995년부터 <b>매일 한 장씩</b> 올라오는 천문사진(APOD)과, 오늘 <b>지구 가까이 지나가는 소행성</b>(NeoWs) 목록이에요. 같은 API 키 하나로 여러 우주 데이터에 접근할 수 있죠.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>천문사진(APOD) + 근지구 소행성(NeoWs) — NASA Open APIs</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요</b> · 기본은 공용 <code>DEMO_KEY</code>(횟수 제한) · 막히면 <b>api.nasa.gov</b>에서 무료 키 발급해 입력</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.nasa.gov/planetary/apod?api_key=…</code><br><code>api.nasa.gov/neo/rest/v1/feed?start_date=…&amp;end_date=…&amp;api_key=…</code></td></tr>
+    <tr><td class="k">확장</td><td>같은 키로 지구사진(EPIC), 화성 날씨 등 다른 API도 호출 가능</td></tr>
+  </table>
+    <a class="srclink" href="https://api.nasa.gov" target="_blank" rel="noopener">🔗 원 데이터 출처: NASA Open APIs ↗</a>
+    <div class="refs"><span class="refs-t">📺 더 보기</span><a class="refchip" href="https://apod.nasa.gov/apod/" target="_blank" rel="noopener">오늘의 천문사진 APOD</a><a class="refchip" href="https://api.nasa.gov/" target="_blank" rel="noopener">소행성 NeoWs 안내</a></div>
+  </section></div><div class="view" id="v-energy" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">⚡</div>
+    <h1>태양·바람 에너지</h1>
+    <div class="tags"><span class="tag subj">에너지·물리·지구</span><span class="tag region">🇰🇷 국내 OK · 🌍 전 세계</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead"><b>NASA POWER</b>는 위성 관측으로 전 세계 어디든 <b>태양 복사량·풍속</b>을 알려줘요. 태양광·풍력 발전소를 어디에 세우면 좋을지 가늠하는, 진짜 <b>신재생에너지 설계용</b> 데이터랍니다.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>위치별 월평균 태양복사량·풍속 등 (NASA POWER, 위성 기반)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN,WS10M&amp;...</code></td></tr>
+    <tr><td class="k">단위</td><td>태양복사 kWh/m²/일 · 풍속 m/s (30년 기후 평년값)</td></tr>
+  </table>
+    <a class="srclink" href="https://power.larc.nasa.gov" target="_blank" rel="noopener">🔗 원 데이터 출처: NASA POWER ↗</a>
+    
+  </section></div><div class="view" id="v-worldbank" hidden><a class="back" href="#">← 대시보드 갤러리</a><header class="phead">
+    <div class="bigemoji">🌱</div>
+    <h1>나라별 CO₂·에너지</h1>
+    <div class="tags"><span class="tag subj">환경·에너지·물리</span><span class="tag region">🌍 전 세계(국내 포함)</span></div>
+  </header><section class="card info">
+    <h2>📋 어떤 데이터인가요?</h2>
+    <p class="lead"><b>세계은행(World Bank)</b>이 모은 나라별 통계예요. 1인당 CO₂ 배출량, 재생에너지 비중 같은 지표로 <b>우리나라와 다른 나라를 데이터로 비교</b>해 볼 수 있어요.</p>
+    <table>
+    <tr><td class="k">무엇</td><td>200여 개국 개발·환경·에너지 지표 (World Bank)</td></tr>
+    <tr><td class="k">API 키</td><td><b>필요 없음</b> · 무료</td></tr>
+    <tr><td class="k">요청 예</td><td><code>api.worldbank.org/v2/country/KR;JP;US/indicator/<i>지표코드</i>?format=json</code></td></tr>
+    <tr><td class="k">예시 지표</td><td>1인당 CO₂ <code>EN.GHG.CO2.PC.CE.AR5</code> · 재생에너지 비중 <code>EG.FEC.RNEW.ZS</code></td></tr>
+  </table>
+    <a class="srclink" href="https://data.worldbank.org" target="_blank" rel="noopener">🔗 원 데이터 출처: World Bank Open Data ↗</a>
+    
+  </section></div></div>
+<script>
+function route(){var h=location.hash.slice(1);var v=h&&document.getElementById('v-'+h);
+document.getElementById('home').hidden=!!v;document.querySelectorAll('.view').forEach(function(e){e.hidden=e!==v;});window.scrollTo(0,0);}
+window.addEventListener('hashchange',route);route();</script>
+</body></html>
